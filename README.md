@@ -1,5 +1,7 @@
 # GhostVault
 
+[![CI](https://github.com/YOUR_USERNAME/GhostVault/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/GhostVault/actions/workflows/ci.yml)
+
 A local RAG (Retrieval-Augmented Generation) system that actually feels like you're working with an intelligence system, not just another chatbot. Built for macOS with a focus on privacy, performance, and that satisfying "hacking into the mainframe" aesthetic.
 
 ## Why I Built This
@@ -158,6 +160,45 @@ Things I might add if I get bored:
 ## Contributing
 
 This is a personal project, but if you find bugs or have ideas, feel free to open an issue. Just don't expect me to respond immediately - I have a day job.
+
+## Testing
+
+The project includes a comprehensive test suite using pytest. To run tests locally:
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_config.py -v
+```
+
+Or use the Makefile:
+
+```bash
+make install-dev  # Install dependencies
+make test         # Run tests
+make test-cov     # Run tests with coverage
+make lint         # Check code quality
+make format       # Auto-format code
+```
+
+### CI/CD
+
+GitHub Actions runs tests automatically on every push and pull request. The CI pipeline includes:
+
+- Unit tests across Python 3.11 and 3.12
+- Code linting with flake8
+- Code formatting checks with black
+- Import sorting verification with isort
+
+Check the `.github/workflows/ci.yml` file for the full CI configuration. The badge at the top shows the current CI status (update the GitHub username/org in the badge URL).
 
 ## License
 
