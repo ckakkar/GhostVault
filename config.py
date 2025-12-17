@@ -5,6 +5,7 @@ Centralized configuration management for the application.
 
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -51,4 +52,3 @@ RETRY_DELAY = float(os.getenv("RETRY_DELAY", "2.0"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = LOGS_DIR / "ghostvault.log"
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
