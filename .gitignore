@@ -25,6 +25,14 @@ db/
 
 # Data files (optional - comment out if you want to track PDFs)
 data/*.pdf
+data/*.txt
+data/*.md
+data/*.markdown
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # OS
 .DS_Store

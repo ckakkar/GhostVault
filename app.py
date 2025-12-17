@@ -6,7 +6,6 @@ A professional RAG application with personality-based chat profiles.
 
 import chainlit as cl
 import asyncio
-import traceback
 from pathlib import Path
 from llama_index.core import VectorStoreIndex, StorageContext, Settings
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -16,13 +15,15 @@ from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
-
-# Configuration
-DB_DIR = Path("./db")
+from config import (
+    DB_DIR, OLLAMA_MODEL, OLLAMA_EMBEDDING_MODEL, OLLAMA_REQUEST_TIMEOUT,
+    CHROMA_COLLECTION_NAME, SIMILARITY_TOP_K, SIMILARITY_CUTOFF, STREAMING_DELAY
+)
+from utils import logger, extract_source_info, deduplicate_sources, get_db_stats
 
 # Initialize LLM and Embeddings (optimized for M2)
-Settings.llm = Ollama(model="llama3", request_timeout=300.0)
-Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
+Settings.llm = Ollama(model=OLLAMA_MODEL, request_timeout=OLLAMA_REQUEST_TIMEOUT)
+Settings.embed_model = OllamaEmbedding(model_name=OLLAMA_EMBEDDING_MODEL)
 
 # Chat Profile System Prompts
 PROFILE_PROMPTS = {
@@ -96,7 +97,7 @@ async def start():
     # Initialize ChromaDB connection
     try:
         chroma_client = chromadb.PersistentClient(path=str(DB_DIR))
-        chroma_collection = chroma_client.get_collection(name="ghostvault")
+        chroma_collection = chroma_client.get_collection(name=CHROMA_COLLECTION_NAME)
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         
@@ -109,14 +110,18 @@ async def start():
         # Create query engine with retriever
         retriever = VectorIndexRetriever(
             index=index,
-            similarity_top_k=5,
+            similarity_top_k=SIMILARITY_TOP_K,
         )
         
         # Configure query engine
         query_engine = RetrieverQueryEngine.from_args(
             retriever=retriever,
-            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.7)],
+            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=SIMILARITY_CUTOFF)],
         )
+        
+        # Get database stats
+        stats = get_db_stats(DB_DIR, CHROMA_COLLECTION_NAME)
+        doc_count = stats.get("document_count", 0)
         
         # Store in session
         cl.user_session.set("query_engine", query_engine)
@@ -130,11 +135,24 @@ async def start():
             "the-skeptic": "🔍 The Skeptic"
         }
         
-        await cl.Message(
-            content=f"**GhostVault System Online. Intelligence core active.**\n\n*Mode: {profile_display.get(profile_name, 'The Architect')}*\n\nHow can I assist you today?",
-        ).send()
+        welcome_msg = f"**GhostVault System Online. Intelligence core active.**\n\n"
+        welcome_msg += f"*Mode: {profile_display.get(profile_name, 'The Architect')}*\n\n"
+        if doc_count > 0:
+            welcome_msg += f"📚 Knowledge base: {doc_count} document(s) indexed\n\n"
+        welcome_msg += "How can I assist you today?"
         
+        await cl.Message(content=welcome_msg).send()
+        logger.info(f"Chat session started with profile: {profile_name}, {doc_count} documents available")
+        
+    except chromadb.errors.CollectionNotFoundError:
+        error_msg = f"⚠️ **System Error**: Knowledge base collection not found.\n\n"
+        error_msg += "Please run the ingestion system first:\n"
+        error_msg += "```bash\npython ingest.py\n```\n\n"
+        error_msg += "Then place documents in the `data/` directory."
+        await cl.Message(content=error_msg).send()
+        logger.error("ChromaDB collection not found")
     except Exception as e:
+        logger.error(f"Error initializing chat session: {e}", exc_info=True)
         await cl.Message(
             content=f"⚠️ **System Error**: Unable to connect to knowledge base.\n\nError: {str(e)}\n\nPlease ensure:\n1. The ingestion system has been run (`python ingest.py`)\n2. Documents have been indexed in the `data/` directory\n3. ChromaDB is accessible at `./db`"
         ).send()
@@ -166,6 +184,8 @@ async def main(message: cl.Message):
     sources_list = []
     
     try:
+        logger.info(f"Processing query with profile: {profile_name}")
+        
         # Query the engine
         query_response = query_engine.query(full_query)
         
@@ -177,24 +197,13 @@ async def main(message: cl.Message):
         
         # Extract sources from the response
         if hasattr(query_response, 'source_nodes') and query_response.source_nodes:
-            seen_sources = set()
-            for node in query_response.source_nodes:
-                try:
-                    if hasattr(node, 'node') and hasattr(node.node, 'metadata'):
-                        metadata = node.node.metadata
-                        file_path = metadata.get('file_path', metadata.get('file_name', 'Unknown'))
-                        page_label = metadata.get('page_label', metadata.get('page_number', metadata.get('page', 'N/A')))
-                        
-                        # Extract just the filename
-                        file_name = Path(file_path).name if file_path != 'Unknown' else 'Unknown'
-                        source_key = f"{file_name}|{page_label}"
-                        
-                        if source_key not in seen_sources:
-                            sources_list.append(f"{file_name} (Page {page_label})")
-                            seen_sources.add(source_key)
-                except Exception as e:
-                    # Skip malformed nodes
-                    continue
+            raw_sources = [extract_source_info(node) for node in query_response.source_nodes]
+            unique_sources = deduplicate_sources([s for s in raw_sources if s])
+            
+            for source in unique_sources:
+                sources_list.append(f"{source['file_name']} (Page {source['page']})")
+            
+            logger.info(f"Retrieved {len(sources_list)} unique sources for query")
         
         # Stream the response character by character for typing effect
         accumulated = ""
@@ -203,7 +212,7 @@ async def main(message: cl.Message):
             response.content = accumulated
             await response.update()
             # Small delay for typing effect
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(STREAMING_DELAY)
         
         # Add Decrypted Sources section
         if sources_list:
@@ -219,7 +228,8 @@ async def main(message: cl.Message):
             await response.update()
             
     except Exception as e:
-        error_msg = f"❌ **Query Error**: {str(e)}\n\nPlease check:\n1. Ollama is running (`ollama serve`)\n2. Llama3 model is available (`ollama pull llama3`)\n3. nomic-embed-text model is available (`ollama pull nomic-embed-text`)"
+        logger.error(f"Query error: {e}", exc_info=True)
+        error_msg = f"❌ **Query Error**: {str(e)}\n\nPlease check:\n1. Ollama is running (`ollama serve`)\n2. {OLLAMA_MODEL} model is available (`ollama pull {OLLAMA_MODEL}`)\n3. {OLLAMA_EMBEDDING_MODEL} model is available (`ollama pull {OLLAMA_EMBEDDING_MODEL}`)"
         response.content = error_msg
         await response.update()
 
