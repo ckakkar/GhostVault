@@ -27,7 +27,14 @@ from config import (
     SIMILARITY_TOP_K,
     STREAMING_DELAY,
 )
-from utils import deduplicate_sources, extract_source_info, get_db_stats, logger
+from document_manager import (
+    clear_all_documents,
+    delete_document,
+    get_document_count,
+    get_document_info,
+    list_documents,
+)
+from utils import deduplicate_sources, extract_source_info, get_db_stats, get_detailed_stats, logger
 
 # Initialize LLM and Embeddings (optimized for M2)
 Settings.llm = Ollama(model=OLLAMA_MODEL, request_timeout=OLLAMA_REQUEST_TIMEOUT)
@@ -138,13 +145,23 @@ async def start():
             "the-skeptic": "🔍 The Skeptic",
         }
 
-        welcome_msg = f"**GhostVault System Online. Intelligence core active.**\n\n"
-        welcome_msg += f"*Mode: {profile_display.get(profile_name, 'The Architect')}*\n\n"
+        profile_icon = {"the-architect": "🏗️", "the-executive": "👔", "the-skeptic": "🔍"}.get(profile_name, "🏗️")
+        profile_label = profile_display.get(profile_name, "The Architect")
+
+        welcome_msg = f"**GhostVault System Online**\n\n"
+        welcome_msg += f"{profile_icon} **{profile_label}**\n\n"
         if doc_count > 0:
-            welcome_msg += f"📚 Knowledge base: {doc_count} document(s) indexed\n\n"
+            welcome_msg += f"📚 {doc_count} document{'s' if doc_count != 1 else ''} indexed\n\n"
         welcome_msg += "How can I assist you today?"
 
-        await cl.Message(content=welcome_msg).send()
+        # Add action buttons with clean descriptions
+        actions = [
+            cl.Action(name="list_documents", value="list", description="📋 Documents"),
+            cl.Action(name="show_stats", value="stats", description="📊 Statistics"),
+            cl.Action(name="clear_index", value="clear", description="🗑️ Clear Index"),
+        ]
+
+        await cl.Message(content=welcome_msg, actions=actions).send()
         logger.info(f"Chat session started with profile: {profile_name}, {doc_count} documents available")
 
     except chromadb.errors.CollectionNotFoundError:
@@ -161,6 +178,66 @@ async def start():
         ).send()
 
 
+def format_documents_list(documents: list) -> str:
+    """Format documents list with clean, minimal styling."""
+    if not documents:
+        return "📋 **No documents indexed**\n\nAdd documents to the `data/` directory to get started."
+
+    msg = "📋 **Indexed Documents**\n\n"
+    for doc in documents:
+        msg += f"**{doc['file_name']}**\n"
+        msg += f"• {doc['chunk_count']} chunks • {doc['page_count']} pages\n\n"
+
+    return msg.strip()
+
+
+def format_statistics(stats: dict) -> str:
+    """Format statistics with clean, organized display."""
+    msg = "📊 **Knowledge Base Statistics**\n\n"
+    msg += f"**Overview**\n"
+    msg += f"• Documents: `{stats['document_count']}`\n"
+    msg += f"• Total Chunks: `{stats['total_chunks']}`\n"
+    msg += f"• Total Pages: `{stats['total_pages']}`\n\n"
+
+    if stats.get("file_types"):
+        msg += "**By File Type**\n"
+        for ext, count in sorted(stats["file_types"].items()):
+            ext_display = ext if ext else "No extension"
+            msg += f"• `{ext_display}`: {count}\n"
+        msg += "\n"
+
+    msg += f"Status: `{stats.get('status', 'unknown').upper()}`"
+    return msg
+
+
+@cl.on_action
+async def on_action(action: cl.Action):
+    """Handle action button clicks with clean responses."""
+    if action.name == "list_documents":
+        documents = list_documents()
+        msg = format_documents_list(documents)
+        await cl.Message(content=msg).send()
+
+    elif action.name == "show_stats":
+        stats = get_detailed_stats(DB_DIR, CHROMA_COLLECTION_NAME)
+        msg = format_statistics(stats)
+        await cl.Message(content=msg).send()
+
+    elif action.name == "clear_index":
+        count = clear_all_documents()
+        msg = f"🗑️ **Index Cleared**\n\nRemoved `{count}` chunks from the knowledge base.\n\nPlace documents in `data/` to re-index."
+        await cl.Message(content=msg).send()
+
+    elif action.name == "delete_document":
+        file_name = action.value
+        success = delete_document(file_name)
+        if success:
+            msg = f"✅ Removed `{file_name}` from the knowledge base."
+        else:
+            msg = f"❌ Could not delete `{file_name}`. Document may not exist."
+        await cl.Message(content=msg).send()
+
+
 @cl.on_message
 async def main(message: cl.Message):
     """Handle incoming messages with the selected profile's personality."""
@@ -171,6 +248,29 @@ async def main(message: cl.Message):
 
     if not query_engine:
         await cl.Message(content="❌ **Error**: Query engine not initialized. Please refresh the page.").send()
+        return
+
+    # Check for special commands
+    query_text = message.content.strip().lower()
+
+    # Handle special commands with clean formatting
+    if query_text.startswith("/list") or query_text == "/docs":
+        documents = list_documents()
+        msg = format_documents_list(documents)
+        await cl.Message(content=msg).send()
+        return
+
+    elif query_text.startswith("/stats") or query_text == "/stat":
+        stats = get_detailed_stats(DB_DIR, CHROMA_COLLECTION_NAME)
+        msg = format_statistics(stats)
+        await cl.Message(content=msg).send()
+        return
+
+    elif query_text.startswith("/delete "):
+        file_name = message.content.replace("/delete", "").strip()
+        success = delete_document(file_name)
+        msg = f"✅ Removed `{file_name}`" if success else f"❌ Could not delete `{file_name}`"
+        await cl.Message(content=msg).send()
         return
 
     # Create the query with system prompt
@@ -215,16 +315,15 @@ async def main(message: cl.Message):
             # Small delay for typing effect
             await asyncio.sleep(STREAMING_DELAY)
 
-        # Add Decrypted Sources section
+        # Add sources section with clean formatting
         if sources_list:
-            sources_section = "\n\n---\n\n**🔐 Decrypted Sources:**\n"
+            sources_section = "\n\n---\n\n**Sources**\n\n"
             for source in sources_list:
-                sources_section += f"- `{source}`\n"
-
+                sources_section += f"• `{source}`\n"
             response.content = response_text + sources_section
             await response.update()
         else:
-            sources_section = "\n\n---\n\n**🔐 Decrypted Sources:**\n*No sources retrieved from knowledge base.*"
+            sources_section = "\n\n---\n\n**Sources**\n\nNo sources retrieved."
             response.content = response_text + sources_section
             await response.update()
 

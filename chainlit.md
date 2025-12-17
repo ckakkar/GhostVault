@@ -1,32 +1,36 @@
-# 👻 GhostVault Intelligence
+# GhostVault
 
-**Secure Local Analysis System**
-
----
-
-Welcome to **GhostVault**, your local intelligence core for secure document analysis and retrieval.
-
-## 🎯 System Capabilities
-
-- **Secure Local Processing**: All data stays on your machine
-- **Intelligent Retrieval**: Advanced RAG (Retrieval-Augmented Generation) technology
-- **Multi-Personality Analysis**: Choose from three specialized analysis modes
-- **Real-Time Ingestion**: Automatic indexing of new documents
-
-## 🔐 Security Features
-
-- **Zero Cloud Dependency**: Complete local operation
-- **Encrypted Storage**: ChromaDB for persistent, secure vector storage
-- **Privacy First**: Your documents never leave your system
-
-## 🚀 Getting Started
-
-1. **Index Your Documents**: Place PDF files in the `data/` directory
-2. **Select Your Profile**: Choose from Architect, Executive, or Skeptic
-3. **Ask Questions**: Query your knowledge base with natural language
-4. **Review Sources**: Every answer includes decrypted source references
+**Secure Local Intelligence System**
 
 ---
 
-*GhostVault System Online. Intelligence core active.*
+GhostVault is your local intelligence core for document analysis and retrieval. All processing happens on your machine—your documents never leave your system.
+
+## Capabilities
+
+- **Local Processing** - Everything runs on your machine
+- **Intelligent Retrieval** - Advanced RAG technology
+- **Multi-Personality Analysis** - Three specialized analysis modes
+- **Automatic Ingestion** - Documents are indexed automatically
+
+## Getting Started
+
+1. Place PDF, TXT, or MD files in the `data/` directory
+2. Select your analysis profile
+3. Ask questions about your documents
+4. Review sources with every answer
+
+## Commands
+
+- `/list` - List indexed documents
+- `/stats` - Show statistics
+- `/delete <filename>` - Remove a document
+
+## Quick Actions
+
+Use the action buttons to manage your knowledge base.
+
+---
+
+*System Online*
 

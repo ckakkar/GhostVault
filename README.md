@@ -23,6 +23,8 @@ The name comes from the fact that everything runs in the background like a ghost
 
 **Runs Entirely Locally** - Your documents never leave your machine. Perfect for sensitive work or when you just want to keep things private.
 
+**Document Management** - Built-in commands and actions to list documents, view statistics, delete documents, and manage your knowledge base.
+
 ## Tech Stack
 
 - **Python 3.11** - Modern Python with all the good stuff
@@ -96,6 +98,10 @@ Then open your browser to `http://localhost:8000` and you're good to go.
 3. **Ask Questions** - Just chat naturally. The system will retrieve relevant chunks from your documents and generate responses in the style of your chosen profile.
 
 4. **Check Sources** - Every response ends with source citations showing the exact file and page number. Click through if you want to verify.
+
+5. **Manage Documents** - Use the action buttons or commands:
+   - **Action Buttons**: Click the buttons in the welcome message to list documents, view stats, or clear the index
+   - **Commands**: Type `/list`, `/stats`, or `/delete <filename>` to manage your knowledge base
 
 ## Project Structure
 
