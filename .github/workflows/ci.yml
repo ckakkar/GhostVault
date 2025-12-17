@@ -38,6 +38,10 @@ jobs:
       run: |
         black --check .
     
+    - name: Remove Chainlit config for tests
+      run: |
+        rm -f .chainlit/config.toml || true
+    
     - name: Run tests with pytest
       run: |
         pytest tests/ -v --tb=short

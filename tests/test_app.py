@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+# Import PROFILE_PROMPTS directly from app module
+# This should work because conftest.py mocks chainlit before import
 from app import PROFILE_PROMPTS
 
 
