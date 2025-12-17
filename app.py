@@ -5,6 +5,8 @@ A professional RAG application with personality-based chat profiles.
 """
 
 import chainlit as cl
+import asyncio
+import traceback
 from pathlib import Path
 from llama_index.core import VectorStoreIndex, StorageContext, Settings
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -164,26 +166,35 @@ async def main(message: cl.Message):
     sources_list = []
     
     try:
-        # Query with streaming
-        streaming_response = query_engine.query(full_query)
+        # Query the engine
+        query_response = query_engine.query(full_query)
         
-        # Collect the full response and stream it
-        full_response = str(streaming_response)
+        # Extract the response text
+        if hasattr(query_response, 'response'):
+            response_text = str(query_response.response)
+        else:
+            response_text = str(query_response)
         
-        # Extract sources from the response metadata
-        if hasattr(streaming_response, 'source_nodes') and streaming_response.source_nodes:
-            for node in streaming_response.source_nodes:
-                if hasattr(node, 'node') and hasattr(node.node, 'metadata'):
-                    metadata = node.node.metadata
-                    file_path = metadata.get('file_path', metadata.get('file_name', 'Unknown'))
-                    page_label = metadata.get('page_label', metadata.get('page_number', 'N/A'))
-                    
-                    # Extract just the filename
-                    file_name = Path(file_path).name if file_path != 'Unknown' else 'Unknown'
-                    sources_list.append(f"{file_name} (Page {page_label})")
-        
-        # Format response with sources
-        response_text = full_response
+        # Extract sources from the response
+        if hasattr(query_response, 'source_nodes') and query_response.source_nodes:
+            seen_sources = set()
+            for node in query_response.source_nodes:
+                try:
+                    if hasattr(node, 'node') and hasattr(node.node, 'metadata'):
+                        metadata = node.node.metadata
+                        file_path = metadata.get('file_path', metadata.get('file_name', 'Unknown'))
+                        page_label = metadata.get('page_label', metadata.get('page_number', metadata.get('page', 'N/A')))
+                        
+                        # Extract just the filename
+                        file_name = Path(file_path).name if file_path != 'Unknown' else 'Unknown'
+                        source_key = f"{file_name}|{page_label}"
+                        
+                        if source_key not in seen_sources:
+                            sources_list.append(f"{file_name} (Page {page_label})")
+                            seen_sources.add(source_key)
+                except Exception as e:
+                    # Skip malformed nodes
+                    continue
         
         # Stream the response character by character for typing effect
         accumulated = ""
@@ -191,6 +202,8 @@ async def main(message: cl.Message):
             accumulated += char
             response.content = accumulated
             await response.update()
+            # Small delay for typing effect
+            await asyncio.sleep(0.01)
         
         # Add Decrypted Sources section
         if sources_list:

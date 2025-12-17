@@ -41,14 +41,26 @@ class PDFHandler(FileSystemEventHandler):
     def _load_existing_index(self):
         """Load existing index if available."""
         try:
-            self.index = VectorStoreIndex.from_vector_store(
-                vector_store=vector_store,
-                storage_context=storage_context
-            )
-            print("✅ GhostVault System Online. Intelligence core active.")
-            print("📚 Loaded existing knowledge base.")
+            # Try to get the collection count to see if index exists
+            collection_count = chroma_collection.count()
+            if collection_count > 0:
+                self.index = VectorStoreIndex.from_vector_store(
+                    vector_store=vector_store,
+                    storage_context=storage_context
+                )
+                print("✅ GhostVault System Online. Intelligence core active.")
+                print(f"📚 Loaded existing knowledge base ({collection_count} documents).")
+            else:
+                # Empty collection, create new index structure
+                self.index = VectorStoreIndex.from_vector_store(
+                    vector_store=vector_store,
+                    storage_context=storage_context
+                )
+                print("✅ GhostVault System Online. Intelligence core active.")
+                print("📁 Knowledge base initialized. Ready for documents.")
         except Exception as e:
-            print(f"⚠️  No existing index found. Starting fresh. ({e})")
+            # If anything fails, create a fresh index
+            print(f"⚠️  Initializing new knowledge base. ({e})")
             self.index = VectorStoreIndex.from_vector_store(
                 vector_store=vector_store,
                 storage_context=storage_context
