@@ -1,0 +1,79 @@
+[project]
+# Whether to enable telemetry (default: true). No personal data is collected.
+enable_telemetry = false
+
+# List of environment variables to be provided by each user to use the app.
+user_env = []
+
+# Duration (in seconds) during which the session is saved when the connection is lost
+session_timeout = 3600
+
+# Enable third parties caching (e.g LangChain cache)
+cache = false
+
+# Authorized origins
+allow_origins = ["*"]
+
+# Follow symlink for asset mount (see https://github.com/Chainlit/chainlit/issues/317)
+# follow_symlink = false
+
+# Execute cloud functions in a thread. Required for run_sync to work with async functions.
+# run_cloud_function_in_thread = true
+
+# API reference: https://docs.chainlit.io/api-reference/chainlit
+[features]
+# Process and display HTML in messages. This can be a security risk. Only enable if you trust the messages.
+process_html = true
+
+# Authorize users to spontaneously upload files with messages.
+[features.spontaneous_file_upload]
+enabled = true
+accept = ["application/pdf", "text/plain"]
+
+[UI]
+# Name of the app and chatbot.
+name = "GhostVault"
+
+# Large size content are by default collapsed for a cleaner ui
+default_collapse_content = true
+
+# The default value for the expand messages settings.
+default_expand_messages = false
+
+# Hide the chain of thought details from the user in the UI.
+hide_cot = false
+
+# Link to your github repo. This will add a github button in the UI's header.
+# github = "https://github.com/your-repo"
+
+# Specify a CSS file that can be used to customize the user interface.
+# The CSS file can be served from the public directory or via an external link.
+custom_css = "style.css"
+
+# Specify a Javascript file that can be used to customize the user interface.
+# The Javascript file can be served from the public directory.
+# custom_js = "/public/test.js"
+
+# Specify a custom font url.
+# custom_font = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+
+# Specify a custom build directory
+# build_directory = "public"
+
+# Override default MUI light theme. (Check theme.ts)
+[UI.theme.light]
+# background = "#FAFAFA"
+# paper = "#FFFFFF"
+
+# Override default MUI dark theme. (Check theme.ts)
+[UI.theme.dark]
+background = "#0f172a"
+paper = "#1e293b"
+
+# Automatically tag threads based on the conversation content. Requires the "chainlit-server" package.
+# [threads]
+# tagger = true
+
+# Control the number of threads that appear in the sidebar.
+# sidebar_thread_limit = 20
+

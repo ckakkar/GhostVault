@@ -1,0 +1,163 @@
+/* GhostVault - Dark Cyberpunk Theme */
+
+/* Main background */
+body {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+/* Container backgrounds */
+.cl-chat-container,
+.cl-main-container,
+.cl-sidebar {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+/* User message bubbles - Blue */
+.cl-user-message {
+    background-color: #1e40af !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    margin: 8px 0 !important;
+    box-shadow: 0 4px 6px rgba(30, 64, 175, 0.3) !important;
+}
+
+.cl-user-message p {
+    color: #ffffff !important;
+}
+
+/* AI message - Transparent with terminal look */
+.cl-assistant-message {
+    background-color: transparent !important;
+    color: #94a3b8 !important;
+    border-left: 2px solid #3b82f6 !important;
+    padding-left: 16px !important;
+    font-family: 'Courier New', 'Monaco', 'Menlo', monospace !important;
+    margin: 8px 0 !important;
+}
+
+.cl-assistant-message p {
+    color: #94a3b8 !important;
+    font-family: 'Courier New', 'Monaco', 'Menlo', monospace !important;
+}
+
+/* Code blocks */
+pre, code {
+    background-color: #1e293b !important;
+    color: #22d3ee !important;
+    border: 1px solid #334155 !important;
+    font-family: 'Courier New', 'Monaco', 'Menlo', monospace !important;
+}
+
+pre {
+    padding: 12px !important;
+    border-radius: 6px !important;
+}
+
+/* Input area */
+.cl-input-wrapper,
+.cl-chat-input {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155 !important;
+}
+
+.cl-chat-input::placeholder {
+    color: #64748b !important;
+}
+
+/* Buttons */
+button {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+button:hover {
+    background-color: #2563eb !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    color: #3b82f6 !important;
+}
+
+/* Links */
+a {
+    color: #60a5fa !important;
+}
+
+a:hover {
+    color: #93c5fd !important;
+}
+
+/* Source highlighting section */
+.cl-assistant-message [data-source-section] {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #334155;
+}
+
+.cl-assistant-message [data-source-section] h4 {
+    color: #22d3ee !important;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.cl-assistant-message [data-source-section] ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.cl-assistant-message [data-source-section] li {
+    color: #64748b !important;
+    font-family: 'Courier New', 'Monaco', 'Menlo', monospace !important;
+    font-size: 0.85em;
+    padding: 4px 0;
+}
+
+/* Profile selector styling */
+.cl-chat-profile {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+.cl-chat-profile:hover {
+    border-color: #3b82f6 !important;
+    background-color: #1e3a8a !important;
+}
+
+.cl-chat-profile-selected {
+    background-color: #1e40af !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Status indicators */
+.cl-status {
+    color: #22d3ee !important;
+}
+
